@@ -412,7 +412,7 @@ impl UnboundKey {
         algorithm: &'static Algorithm,
         key_bytes: &[u8],
     ) -> Result<Self, error::Unspecified> {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         Ok(Self {
             inner: (algorithm.init)(key_bytes, cpu_features)?,
             algorithm,

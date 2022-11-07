@@ -23,6 +23,11 @@
 pub(crate) struct Features(());
 
 #[inline(always)]
+pub(crate) fn features_2() -> Features {
+    Features(())
+}
+
+#[inline(always)]
 pub(crate) fn features() -> Features {
     // We don't do runtime feature detection on aarch64-apple-* as all AAarch64
     // features we use are available on every device since the first devices.
@@ -215,7 +220,7 @@ pub(crate) mod arm {
             #[cfg(all(target_arch = "aarch64", target_vendor = "apple"))]
             #[test]
             fn test_armcap_static_available() {
-                let features = crate::cpu::features();
+                let features = crate::cpu::features_2();
                 $(
                     assert!($name.available(features));
                 )+

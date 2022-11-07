@@ -396,7 +396,7 @@ impl<B: AsRef<[u8]>> UnparsedPublicKey<B> {
     ///
     /// See the [crate::signature] module-level documentation for examples.
     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), error::Unspecified> {
-        let _ = cpu::features();
+        let _ = cpu::features_2();
         self.algorithm.verify(
             untrusted::Input::from(self.bytes.as_ref()),
             untrusted::Input::from(message),

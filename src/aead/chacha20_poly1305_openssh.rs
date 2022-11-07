@@ -46,7 +46,7 @@ impl SealingKey {
     /// Constructs a new `SealingKey`.
     pub fn new(key_material: &[u8; KEY_LEN]) -> SealingKey {
         SealingKey {
-            key: Key::new(key_material, cpu::features()),
+            key: Key::new(key_material, cpu::features_2()),
         }
     }
 
@@ -93,7 +93,7 @@ impl OpeningKey {
     /// Constructs a new `OpeningKey`.
     pub fn new(key_material: &[u8; KEY_LEN]) -> OpeningKey {
         OpeningKey {
-            key: Key::new(key_material, cpu::features()),
+            key: Key::new(key_material, cpu::features_2()),
         }
     }
 

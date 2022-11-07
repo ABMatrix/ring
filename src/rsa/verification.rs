@@ -262,7 +262,7 @@ where
         message: &[u8],
         signature: &[u8],
     ) -> Result<(), error::Unspecified> {
-        let _ = cpu::features();
+        let _ = cpu::features_2();
         verify_rsa_(
             params,
             (
