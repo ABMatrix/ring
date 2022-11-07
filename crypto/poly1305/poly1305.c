@@ -16,7 +16,7 @@
 // (https://github.com/floodyberry/poly1305-donna) and released as public
 // domain.
 
-#include <ring-core/poly1305.h>
+#include <GFp/poly1305.h>
 
 #include "internal.h"
 #include "../internal.h"
@@ -24,7 +24,7 @@
 
 #if !defined(BORINGSSL_HAS_UINT128) || !defined(OPENSSL_X86_64)
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
@@ -32,12 +32,12 @@
 // We can assume little-endian.
 static uint32_t U8TO32_LE(const uint8_t *m) {
   uint32_t r;
-  OPENSSL_memcpy(&r, m, sizeof(r));
+  GFp_memcpy(&r, m, sizeof(r));
   return r;
 }
 
 static void U32TO8_LE(uint8_t *m, uint32_t v) {
-  OPENSSL_memcpy(m, &v, sizeof(v));
+  GFp_memcpy(m, &v, sizeof(v));
 }
 
 static uint64_t mul32x32_64(uint32_t a, uint32_t b) { return (uint64_t)a * b; }
@@ -51,9 +51,8 @@ struct poly1305_state_st {
   uint8_t key[16];
 };
 
-OPENSSL_STATIC_ASSERT(
-    sizeof(struct poly1305_state_st) + 63 <= sizeof(poly1305_state),
-    "poly1305_state isn't large enough to hold aligned poly1305_state_st");
+OPENSSL_STATIC_ASSERT(sizeof(struct poly1305_state_st) <= sizeof(poly1305_state),
+  "poly1305_state isn't large enough to hold aligned poly1305_state_st");
 
 static inline struct poly1305_state_st *poly1305_aligned_state(
     poly1305_state *state) {
@@ -158,7 +157,7 @@ poly1305_donna_atmost15bytes:
   goto poly1305_donna_mul;
 }
 
-void CRYPTO_poly1305_init(poly1305_state *statep, const uint8_t key[32]) {
+void GFp_poly1305_init(poly1305_state *statep, const uint8_t key[32]) {
   struct poly1305_state_st *state = poly1305_aligned_state(statep);
   uint32_t t0, t1, t2, t3;
 
@@ -194,17 +193,12 @@ void CRYPTO_poly1305_init(poly1305_state *statep, const uint8_t key[32]) {
   state->h4 = 0;
 
   state->buf_used = 0;
-  OPENSSL_memcpy(state->key, key + 16, sizeof(state->key));
+  GFp_memcpy(state->key, key + 16, sizeof(state->key));
 }
 
-void CRYPTO_poly1305_update(poly1305_state *statep, const uint8_t *in,
-                            size_t in_len) {
+void GFp_poly1305_update(poly1305_state *statep, const uint8_t *in,
+                         size_t in_len) {
   struct poly1305_state_st *state = poly1305_aligned_state(statep);
-
-  // Work around a C language bug. See https://crbug.com/1019588.
-  if (in_len == 0) {
-    return;
-  }
 
   if (state->buf_used) {
     size_t todo = 16 - state->buf_used;
@@ -239,7 +233,7 @@ void CRYPTO_poly1305_update(poly1305_state *statep, const uint8_t *in,
   }
 }
 
-void CRYPTO_poly1305_finish(poly1305_state *statep, uint8_t mac[16]) {
+void GFp_poly1305_finish(poly1305_state *statep, uint8_t mac[16]) {
   struct poly1305_state_st *state = poly1305_aligned_state(statep);
   uint64_t f0, f1, f2, f3;
   uint32_t g0, g1, g2, g3, g4;

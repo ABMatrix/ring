@@ -19,7 +19,7 @@
 //
 // The field functions are shared by Ed25519 and X25519 where possible.
 
-#include <ring-core/mem.h>
+#include <GFp/mem.h>
 
 #include "internal.h"
 #include "../internal.h"
@@ -31,21 +31,13 @@
 #pragma warning(disable: 4244)
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Winline"
-#endif
-
 // Various pre-computed constants.
 #include "./curve25519_tables.h"
-
-#if defined(OPENSSL_NO_ASM)
-#define FIAT_25519_NO_ASM
-#endif
 
 #if defined(BORINGSSL_CURVE25519_64BIT)
 #if defined(__GNUC__)
@@ -167,7 +159,7 @@ static void fe_frombytes_strict(fe *h, const uint8_t s[32]) {
 
 static void fe_frombytes(fe *h, const uint8_t s[32]) {
   uint8_t s_copy[32];
-  OPENSSL_memcpy(s_copy, s, 32);
+  GFp_memcpy(s_copy, s, 32);
   s_copy[31] &= 0x7f;
   fe_frombytes_strict(h, s_copy);
 }
@@ -179,21 +171,21 @@ static void fe_tobytes(uint8_t s[32], const fe *f) {
 
 // h = 0
 static void fe_0(fe *h) {
-  OPENSSL_memset(h, 0, sizeof(fe));
+  GFp_memset(h, 0, sizeof(fe));
 }
 
 static void fe_loose_0(fe_loose *h) {
-  OPENSSL_memset(h, 0, sizeof(fe_loose));
+  GFp_memset(h, 0, sizeof(fe_loose));
 }
 
 // h = 1
 static void fe_1(fe *h) {
-  OPENSSL_memset(h, 0, sizeof(fe));
+  GFp_memset(h, 0, sizeof(fe));
   h->v[0] = 1;
 }
 
 static void fe_loose_1(fe_loose *h) {
-  OPENSSL_memset(h, 0, sizeof(fe_loose));
+  GFp_memset(h, 0, sizeof(fe_loose));
   h->v[0] = 1;
 }
 
@@ -400,7 +392,7 @@ static int fe_isnonzero(const fe_loose *f) {
   fe_tobytes(s, &tight);
 
   static const uint8_t zero[32] = {0};
-  return OPENSSL_memcmp(s, zero, sizeof(zero)) != 0;
+  return GFp_memcmp(s, zero, sizeof(zero)) != 0;
 }
 
 // return 1 if f is in {1,3,5,...,q-2}
@@ -481,24 +473,30 @@ static void fe_pow22523(fe *out, const fe *z) {
 
 // Group operations.
 
-int x25519_ge_frombytes_vartime(ge_p3 *h, const uint8_t s[32]) {
+int GFp_x25519_ge_frombytes_vartime(ge_p3 *h, const uint8_t s[32]) {
   fe u;
   fe_loose v;
-  fe w;
+  fe v3;
   fe vxx;
   fe_loose check;
 
   fe_frombytes(&h->Y, s);
   fe_1(&h->Z);
-  fe_sq_tt(&w, &h->Y);
-  fe_mul_ttt(&vxx, &w, &d);
-  fe_sub(&v, &w, &h->Z);  // u = y^2-1
+  fe_sq_tt(&v3, &h->Y);
+  fe_mul_ttt(&vxx, &v3, &d);
+  fe_sub(&v, &v3, &h->Z);  // u = y^2-1
   fe_carry(&u, &v);
   fe_add(&v, &vxx, &h->Z);  // v = dy^2+1
 
-  fe_mul_ttl(&w, &u, &v);  // w = u*v
-  fe_pow22523(&h->X, &w);  // x = w^((q-5)/8)
-  fe_mul_ttt(&h->X, &h->X, &u);  // x = u*w^((q-5)/8)
+  fe_sq_tl(&v3, &v);
+  fe_mul_ttl(&v3, &v3, &v);  // v3 = v^3
+  fe_sq_tt(&h->X, &v3);
+  fe_mul_ttl(&h->X, &h->X, &v);
+  fe_mul_ttt(&h->X, &h->X, &u);  // x = uv^7
+
+  fe_pow22523(&h->X, &h->X);  // x = (uv^7)^((q-5)/8)
+  fe_mul_ttt(&h->X, &h->X, &v3);
+  fe_mul_ttt(&h->X, &h->X, &u);  // x = uv^3(uv^7)^((q-5)/8)
 
   fe_sq_tt(&vxx, &h->X);
   fe_mul_ttl(&vxx, &vxx, &v);
@@ -781,7 +779,7 @@ static void table_select(ge_precomp *t, int pos, signed char b) {
 //
 // Preconditions:
 //   a[31] <= 127
-void x25519_ge_scalarmult_base(ge_p3 *h, const uint8_t a[32]) {
+void GFp_x25519_ge_scalarmult_base(ge_p3 *h, const uint8_t *a) {
   signed char e[64];
   signed char carry;
   ge_p1p1 r;
@@ -954,7 +952,7 @@ static inline int64_t int64_lshift21(int64_t a) {
 //   s[0]+256*s[1]+...+256^31*s[31] = s mod l
 //   where l = 2^252 + 27742317777372353535851937790883648493.
 //   Overwrites s in place.
-void x25519_sc_reduce(uint8_t s[64]) {
+void GFp_x25519_sc_reduce(uint8_t s[64]) {
   int64_t s0 = 2097151 & load_3(s);
   int64_t s1 = 2097151 & (load_4(s + 2) >> 5);
   int64_t s2 = 2097151 & (load_3(s + 5) >> 2);
@@ -1777,14 +1775,14 @@ static void sc_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b,
 }
 
 
-void x25519_scalar_mult_generic_masked(uint8_t out[32],
+void GFp_x25519_scalar_mult_generic_masked(uint8_t out[32],
                                            const uint8_t scalar_masked[32],
                                            const uint8_t point[32]) {
   fe x1, x2, z2, x3, z3, tmp0, tmp1;
   fe_loose x2l, z2l, x3l, tmp0l, tmp1l;
 
   uint8_t e[32];
-  OPENSSL_memcpy(e, scalar_masked, 32);
+  GFp_memcpy(e, scalar_masked, 32);
   // The following implementation was transcribed to Coq and proven to
   // correspond to unary scalar multiplication in affine coordinates given that
   // x1 != 0 is the x coordinate of some point on the curve. It was also checked
@@ -1855,13 +1853,13 @@ void x25519_scalar_mult_generic_masked(uint8_t out[32],
   fe_tobytes(out, &x2);
 }
 
-void x25519_public_from_private_generic_masked(uint8_t out_public_value[32],
+void GFp_x25519_public_from_private_generic_masked(uint8_t out_public_value[32],
                                                    const uint8_t private_key_masked[32]) {
   uint8_t e[32];
-  OPENSSL_memcpy(e, private_key_masked, 32);
+  GFp_memcpy(e, private_key_masked, 32);
 
   ge_p3 A;
-  x25519_ge_scalarmult_base(&A, e);
+  GFp_x25519_ge_scalarmult_base(&A, e);
 
   // We only need the u-coordinate of the curve25519 point. The map is
   // u=(y+1)/(1-y). Since y=Y/Z, this gives u=(Z+Y)/(Z-Y).
@@ -1874,40 +1872,40 @@ void x25519_public_from_private_generic_masked(uint8_t out_public_value[32],
   fe_tobytes(out_public_value, &zminusy_inv);
 }
 
-void x25519_fe_invert(fe *out, const fe *z) {
+void GFp_x25519_fe_invert(fe *out, const fe *z) {
   fe_invert(out, z);
 }
 
-uint8_t x25519_fe_isnegative(const fe *f) {
+uint8_t GFp_x25519_fe_isnegative(const fe *f) {
   return (uint8_t)fe_isnegative(f);
 }
 
-void x25519_fe_mul_ttt(fe *h, const fe *f, const fe *g) {
+void GFp_x25519_fe_mul_ttt(fe *h, const fe *f, const fe *g) {
   fe_mul_ttt(h, f, g);
 }
 
-void x25519_fe_neg(fe *f) {
+void GFp_x25519_fe_neg(fe *f) {
   fe_loose t;
   fe_neg(&t, f);
   fe_carry(f, &t);
 }
 
-void x25519_fe_tobytes(uint8_t s[32], const fe *h) {
+void GFp_x25519_fe_tobytes(uint8_t s[32], const fe *h) {
   fe_tobytes(s, h);
 }
 
-void x25519_ge_double_scalarmult_vartime(ge_p2 *r, const uint8_t *a,
+void GFp_x25519_ge_double_scalarmult_vartime(ge_p2 *r, const uint8_t *a,
                                              const ge_p3 *A, const uint8_t *b) {
   ge_double_scalarmult_vartime(r, a, A, b);
 }
 
-void x25519_sc_mask(uint8_t a[32]) {
+void GFp_x25519_sc_mask(uint8_t a[32]) {
   a[0] &= 248;
   a[31] &= 127;
   a[31] |= 64;
 }
 
-void x25519_sc_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b,
+void GFp_x25519_sc_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b,
                           const uint8_t *c) {
   sc_muladd(s, a, b, c);
 }

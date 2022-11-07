@@ -126,18 +126,23 @@ die "can't locate x86_64-xlate.pl";
 # versions, but BoringSSL is intended to be used with pre-generated perlasm
 # output, so this isn't useful anyway.
 #
-# This file also has an AVX2 implementation, controlled by setting $avx to 2.
-# For now, we intentionally disable it. While it gives a 13-16% perf boost, the
-# CFI annotations are wrong. It allocates stack in a loop and should be
-# rewritten to avoid this.
+# TODO(briansmith): Address davidben's concerns about the CFI annotations and
+# Win64 ABI issues at https://github.com/openssl/openssl/issues/8853.
+# TODO(davidben): Enable AVX2 code after testing by setting $avx to 2. Is it
+# necessary to disable AVX2 code when SHA Extensions code is disabled? Upstream
+# did not tie them together until after $shaext was added.
 $avx = 1;
-$shaext = 1;
+
+# TODO(davidben): Consider enabling the Intel SHA Extensions code once it's
+# been tested.
+$shaext=0;	### set to zero if compiling for 1.0.1
+$avx=1		if (!$shaext && $avx);
 
 open OUT,"| \"$^X\" \"$xlate\" $flavour \"$output\"";
 *STDOUT=*OUT;
 
 if ($output =~ /sha512-x86_64/) {
-	$func="sha512_block_data_order";
+	$func="GFp_sha512_block_data_order";
 	$TABLE="K512";
 	$SZ=8;
 	@ROT=($A,$B,$C,$D,$E,$F,$G,$H)=("%rax","%rbx","%rcx","%rdx",
@@ -149,7 +154,7 @@ if ($output =~ /sha512-x86_64/) {
 	@sigma1=(19,61, 6);
 	$rounds=80;
 } else {
-	$func="sha256_block_data_order";
+	$func="GFp_sha256_block_data_order";
 	$TABLE="K256";
 	$SZ=4;
 	@ROT=($A,$B,$C,$D,$E,$F,$G,$H)=("%eax","%ebx","%ecx","%edx",
@@ -257,7 +262,7 @@ ___
 $code=<<___;
 .text
 
-.extern	OPENSSL_ia32cap_P
+.extern	GFp_ia32cap_P
 .globl	$func
 .type	$func,\@function,3
 .align	16
@@ -265,14 +270,14 @@ $func:
 .cfi_startproc
 ___
 $code.=<<___ if ($SZ==4 || $avx);
-	leaq	OPENSSL_ia32cap_P(%rip),%r11
+	leaq	GFp_ia32cap_P(%rip),%r11
 	mov	0(%r11),%r9d
 	mov	4(%r11),%r10d
 	mov	8(%r11),%r11d
 ___
 $code.=<<___ if ($SZ==4 && $shaext);
 	test	\$`1<<29`,%r11d		# check for SHA
-	jnz	.Lshaext_shortcut
+	jnz	_shaext_shortcut
 ___
     # XOP codepath removed.
 $code.=<<___ if ($avx>1);
@@ -553,11 +558,10 @@ my ($Wi,$ABEF,$CDGH,$TMP,$BSWAP,$ABEF_SAVE,$CDGH_SAVE)=map("%xmm$_",(0..2,7..10)
 my @MSG=map("%xmm$_",(3..6));
 
 $code.=<<___;
-.type	sha256_block_data_order_shaext,\@function,3
+.type	GFp_sha256_block_data_order_shaext,\@function,3
 .align	64
-sha256_block_data_order_shaext:
-.cfi_startproc
-.Lshaext_shortcut:
+GFp_sha256_block_data_order_shaext:
+_shaext_shortcut:
 ___
 $code.=<<___ if ($win64);
 	lea	`-8-5*16`(%rsp),%rsp
@@ -701,8 +705,7 @@ $code.=<<___ if ($win64);
 ___
 $code.=<<___;
 	ret
-.cfi_endproc
-.size	sha256_block_data_order_shaext,.-sha256_block_data_order_shaext
+.size	GFp_sha256_block_data_order_shaext,.-GFp_sha256_block_data_order_shaext
 ___
 }}}
 {{{
@@ -1669,4 +1672,4 @@ foreach (split("\n",$code)) {
 
 	print $_,"\n";
 }
-close STDOUT or die "error closing STDOUT: $!";
+close STDOUT or die "error closing STDOUT";

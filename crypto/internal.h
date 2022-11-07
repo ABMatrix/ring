@@ -109,15 +109,9 @@
 #ifndef OPENSSL_HEADER_CRYPTO_INTERNAL_H
 #define OPENSSL_HEADER_CRYPTO_INTERNAL_H
 
-#include <ring-core/base.h> // Must be first.
+#include <GFp/base.h> // Must be first.
 
-#include "ring-core/check.h"
-
-#if defined(__clang__)
-// Don't require prototypes for functions defined in C that are only
-// used from Rust.
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-#endif
+#include "GFp/check.h"
 
 #if defined(__GNUC__) && \
     (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40800
@@ -129,15 +123,6 @@
 #define alignas(x) __declspec(align(x))
 #else
 #include <stdalign.h>
-#endif
-
-// Some C compilers require a useless cast when dealing with arrays for the
-// reason explained in
-// https://gustedt.wordpress.com/2011/02/12/const-and-arrays/
-#if defined(__clang__) || defined(_MSC_VER)
-#define RING_CORE_POINTLESS_ARRAY_CONST_CAST(cast)
-#else
-#define RING_CORE_POINTLESS_ARRAY_CONST_CAST(cast) cast
 #endif
 
 #if (!defined(_MSC_VER) || defined(__clang__)) && defined(OPENSSL_64_BIT)
@@ -274,12 +259,12 @@ static inline uint32_t CRYPTO_bswap4(uint32_t x) {
 }
 #endif
 
-#if !defined(RING_CORE_NOSTDLIBINC)
+#if !defined(GFp_NOSTDLIBINC)
 #include <string.h>
 #endif
 
-static inline void *OPENSSL_memcpy(void *dst, const void *src, size_t n) {
-#if !defined(RING_CORE_NOSTDLIBINC)
+static inline void *GFp_memcpy(void *dst, const void *src, size_t n) {
+#if !defined(GFp_NOSTDLIBINC)
   if (n == 0) {
     return dst;
   }
@@ -294,8 +279,8 @@ static inline void *OPENSSL_memcpy(void *dst, const void *src, size_t n) {
 #endif
 }
 
-static inline void *OPENSSL_memset(void *dst, int c, size_t n) {
-#if !defined(RING_CORE_NOSTDLIBINC)
+static inline void *GFp_memset(void *dst, int c, size_t n) {
+#if !defined(GFp_NOSTDLIBINC)
   if (n == 0) {
     return dst;
   }
@@ -308,31 +293,5 @@ static inline void *OPENSSL_memset(void *dst, int c, size_t n) {
   return dst;
 #endif
 }
-
-
-// Runtime CPU feature support
-
-#if defined(OPENSSL_X86) || defined(OPENSSL_X86_64)
-// OPENSSL_ia32cap_P contains the Intel CPUID bits when running on an x86 or
-// x86-64 system.
-//
-//   Index 0:
-//     EDX for CPUID where EAX = 1
-//     Bit 20 is always zero
-//     Bit 28 is adjusted to reflect whether the data cache is shared between
-//       multiple logical cores
-//     Bit 30 is used to indicate an Intel CPU
-//   Index 1:
-//     ECX for CPUID where EAX = 1
-//     Bit 11 is used to indicate AMD XOP support, not SDBG
-//   Index 2:
-//     EBX for CPUID where EAX = 7
-//   Index 3:
-//     ECX for CPUID where EAX = 7
-//
-// Note: the CPUID bits are pre-adjusted for the OSXSAVE bit and the YMM and XMM
-// bits in XCR0, so it is not necessary to check those.
-extern uint32_t OPENSSL_ia32cap_P[4];
-#endif
 
 #endif  // OPENSSL_HEADER_CRYPTO_INTERNAL_H
