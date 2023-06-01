@@ -83,7 +83,7 @@ impl EcdsaKeyPair {
         alg: &'static EcdsaSigningAlgorithm,
         rng: &dyn rand::SecureRandom,
     ) -> Result<pkcs8::Document, error::Unspecified> {
-        let private_key = ec::Seed::generate(alg.curve, rng, cpu::features())?;
+        let private_key = ec::Seed::generate(alg.curve, rng, cpu::features_2())?;
         let public_key = private_key.compute_public_key()?;
         Ok(pkcs8::wrap_key(
             alg.pkcs8_template,
@@ -111,7 +111,7 @@ impl EcdsaKeyPair {
             alg.curve,
             alg.pkcs8_template,
             untrusted::Input::from(pkcs8),
-            cpu::features(),
+            cpu::features_2(),
         )?;
         Self::new(alg, key_pair, rng)
     }
@@ -142,7 +142,7 @@ impl EcdsaKeyPair {
             alg.curve,
             untrusted::Input::from(private_key),
             untrusted::Input::from(public_key),
-            cpu::features(),
+            cpu::features_2(),
         )?;
         Self::new(alg, key_pair, rng)
     }

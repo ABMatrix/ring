@@ -23,6 +23,11 @@
 pub(crate) struct Features(());
 
 #[inline(always)]
+pub(crate) fn features_2() -> Features {
+    Features(())
+}
+
+#[inline(always)]
 pub(crate) fn features() -> Features {
     // We don't do runtime feature detection on aarch64-apple-* as all AAarch64
     // features we use are available on every device since the first devices.

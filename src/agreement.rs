@@ -106,7 +106,7 @@ impl EphemeralPrivateKey {
         alg: &'static Algorithm,
         rng: &dyn rand::SecureRandom,
     ) -> Result<Self, error::Unspecified> {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
 
         // NSA Guide Step 1.
         //

@@ -55,7 +55,7 @@ impl BlockContext {
             state: algorithm.initial_state,
             completed_data_blocks: 0,
             algorithm,
-            cpu_features: cpu::features(),
+            cpu_features: cpu::features_2(),
         }
     }
 
@@ -575,7 +575,7 @@ mod tests {
                     state: alg.initial_state,
                     completed_data_blocks: max_blocks - 1,
                     algorithm: alg,
-                    cpu_features: crate::cpu::features(),
+                    cpu_features: crate::cpu::features_2(),
                 },
                 pending: [0u8; digest::MAX_BLOCK_LEN],
                 num_pending: 0,

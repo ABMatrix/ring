@@ -137,7 +137,7 @@ mod tests {
     // Adapted from BoringSSL's crypto/poly1305/poly1305_test.cc.
     #[test]
     pub fn test_poly1305() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(test_file!("poly1305_test.txt"), |section, test_case| {
             assert_eq!(section, "");
             let key = test_case.consume_bytes("Key");

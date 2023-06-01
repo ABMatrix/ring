@@ -1423,7 +1423,7 @@ mod tests {
 
     #[test]
     fn test_elem_exp_consttime() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(
             test_file!("bigint_elem_exp_consttime_tests.txt"),
             |section, test_case| {
@@ -1452,7 +1452,7 @@ mod tests {
     // verification and signing tests.
     #[test]
     fn test_elem_mul() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(
             test_file!("bigint_elem_mul_tests.txt"),
             |section, test_case| {
@@ -1476,7 +1476,7 @@ mod tests {
 
     #[test]
     fn test_elem_squared() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(
             test_file!("bigint_elem_squared_tests.txt"),
             |section, test_case| {
@@ -1498,7 +1498,7 @@ mod tests {
 
     #[test]
     fn test_elem_reduced() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(
             test_file!("bigint_elem_reduced_tests.txt"),
             |section, test_case| {
@@ -1525,7 +1525,7 @@ mod tests {
 
     #[test]
     fn test_elem_reduced_once() {
-        let cpu_features = cpu::features();
+        let cpu_features = cpu::features_2();
         test::run(
             test_file!("bigint_elem_reduced_once_tests.txt"),
             |section, test_case| {
@@ -1553,7 +1553,7 @@ mod tests {
     fn test_modulus_debug() {
         let (modulus, _) = Modulus::<M>::from_be_bytes_with_bit_length(
             untrusted::Input::from(&[0xff; LIMB_BYTES * MODULUS_MIN_LIMBS]),
-            cpu::features(),
+            cpu::features_2(),
         )
         .unwrap();
         assert_eq!("Modulus", format!("{:?}", modulus));

@@ -379,7 +379,7 @@ impl<B> UnparsedPublicKey<B> {
     where
         B: AsRef<[u8]>,
     {
-        let _ = cpu::features();
+        let _ = cpu::features_2();
         self.algorithm.verify(
             untrusted::Input::from(self.bytes.as_ref()),
             untrusted::Input::from(message),

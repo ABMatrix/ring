@@ -234,7 +234,7 @@ impl KeyPair {
             dQ: components.dQ.as_ref(),
             qInv: components.qInv.as_ref(),
         };
-        Self::from_components_(&components, cpu::features())
+        Self::from_components_(&components, cpu::features_2())
     }
 
     fn from_components_(

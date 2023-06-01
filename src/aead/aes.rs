@@ -460,6 +460,6 @@ mod tests {
             32 => Variant::AES_256,
             _ => unreachable!(),
         };
-        Key::new(&key[..], variant, cpu::features()).unwrap()
+        Key::new(&key[..], variant, cpu::features_2()).unwrap()
     }
 }

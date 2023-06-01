@@ -52,7 +52,7 @@ impl HeaderProtectionKey {
         key_bytes: &[u8],
     ) -> Result<Self, error::Unspecified> {
         Ok(Self {
-            inner: (algorithm.init)(key_bytes, cpu::features())?,
+            inner: (algorithm.init)(key_bytes, cpu::features_2())?,
             algorithm,
         })
     }

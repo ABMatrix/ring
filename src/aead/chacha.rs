@@ -267,7 +267,7 @@ mod tests {
 
             let key = test_case.consume_bytes("Key");
             let key: &[u8; KEY_LEN] = key.as_slice().try_into()?;
-            let key = Key::new(*key, cpu::features());
+            let key = Key::new(*key, cpu::features_2());
 
             let ctr = test_case.consume_usize("Ctr");
             let nonce = test_case.consume_bytes("Nonce");

@@ -285,7 +285,7 @@ mod tests {
 
     #[cfg(target_vendor = "apple")]
     #[test]
-    fn test_apple_minimum_features() {
+    fn test_apple_minimum_features_2() {
         ALL_FEATURES.iter().for_each(|feature| {
             assert_eq!(ARMCAP_STATIC & feature.mask, feature.mask);
         });
@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn test_armcap_static_is_subset_of_armcap_dynamic() {
         // Ensure `OPENSSL_armcap_P` is initialized.
-        let cpu = crate::cpu::features();
+        let cpu = crate::cpu::features_2();
 
         let armcap_dynamic = unsafe { OPENSSL_armcap_P };
         assert_eq!(armcap_dynamic & ARMCAP_STATIC, ARMCAP_STATIC);

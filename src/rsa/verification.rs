@@ -207,7 +207,7 @@ pub(crate) fn verify_rsa_(
         params.min_bits,
         max_bits,
         PublicExponent::_3,
-        cpu::features(),
+        cpu::features_2(),
     )?;
 
     // RFC 8017 Section 5.2.2: RSAVP1.
